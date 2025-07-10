@@ -1,61 +1,64 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
 import joblib
+import numpy as np
 import os
 
-# Initialize Flask app
-app = Flask(__name__, static_folder='frontend/build', static_url_path='')
-CORS(app)
+# Load model and encoders
+MODEL_PATH = "disease_model_small.joblib"
+ENCODER_PATH = "label_encoder_small.joblib"
+SYMPTOM_LIST_PATH = "symptoms_list.joblib"
 
-# Load model and label encoder
-model = joblib.load("disease_model_small.joblib")
-label_encoder = joblib.load("label_encoder_small.joblib")
-symptom_list = joblib.load("symptoms_list.joblib")
+model = joblib.load(MODEL_PATH)
+label_encoder = joblib.load(ENCODER_PATH)
+symptom_list = joblib.load(SYMPTOM_LIST_PATH)
 
-@app.route("/api/predict", methods=["POST"])
-def predict_disease():
-    try:
-        data = request.get_json()
-        symptoms_input = data.get("symptoms", [])
+# Example medicine mapping; replace with your real mapping
+medicine_mapping = {
+    "panic disorder": [
+        "Xanax (Alprazolam)",
+        "Cognitive Behavioral Therapy (CBT)",
+        "Sertraline",
+        "Clonazepam",
+        "Paroxetine"
+    ],
+    "flu": [
+        "Oseltamivir",
+        "Rest",
+        "Fluids",
+        "Acetaminophen"
+    ],
+    # Add more disease: [medicines...] as needed
+}
 
-        # Convert symptoms to binary feature vector
-        input_vector = [1 if symptom in symptoms_input else 0 for symptom in symptom_list]
+app = Flask(__name__, static_folder="frontend/build", static_url_path="")
 
-        prediction = model.predict([input_vector])[0]
-        predicted_disease = label_encoder.inverse_transform([prediction])[0]
+@app.route('/api/predict', methods=['POST'])
+def predict():
+    data = request.get_json()
+    symptoms = data.get('symptoms', [])
+    # Create input vector
+    input_vector = np.zeros(len(symptom_list))
+    for symptom in symptoms:
+        if symptom in symptom_list:
+            idx = symptom_list.index(symptom)
+            input_vector[idx] = 1
+    # Predict
+    prediction = model.predict([input_vector])[0]
+    disease = label_encoder.inverse_transform([prediction])[0]
+    recommended_medicines = medicine_mapping.get(disease, ["No recommendation available"])
+    return jsonify({
+        "disease": disease,
+        "recommended_medicines": recommended_medicines
+    })
 
-        # Dummy medicine mapping (you can update with real mappings)
-        medicine_map = {
-            "panic disorder": [
-                "Xanax (Alprazolam)",
-                "Cognitive Behavioral Therapy (CBT)",
-                "Sertraline",
-                "Clonazepam",
-                "Paroxetine"
-            ],
-            "migraine": ["Ibuprofen", "Paracetamol", "Triptans"],
-            "flu": ["Rest", "Fluids", "Paracetamol"]
-            # Add more disease: medicine mappings as needed
-        }
-
-        recommended_medicines = medicine_map.get(predicted_disease.lower(), ["Consult a doctor"])
-
-        return jsonify({
-            "predicted_disease": predicted_disease,
-            "recommended_medicines": recommended_medicines
-        })
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-# Serve React app from build folder
+# Serve React frontend
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
     if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
-    return send_from_directory(app.static_folder, 'index.html')
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
-# Run the app (development only)
-if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+if __name__ == '__main__':
+    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
