@@ -1,0 +1,33 @@
+.App {
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 20px;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  font-family: sans-serif;
+  background: #fafcff;
+}
+input[type="text"] {
+  width: 100%;
+  margin-top: 7px;
+  margin-bottom: 14px;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+}
+button {
+  padding: 8px 14px;
+  border-radius: 4px;
+  border: none;
+  background: #1f7aec;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:disabled {
+  background: #aaa;
+}
+.response {
+  margin-top: 20px;
+  padding: 10px 0;
+}
