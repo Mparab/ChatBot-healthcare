@@ -1,81 +1,128 @@
 from flask import Flask, request, jsonify, send_from_directory
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_jwt_extended import (
+    JWTManager, create_access_token,
+    jwt_required, get_jwt_identity
+)
+from flask_cors import CORS
+import os
 import joblib
 import numpy as np
-import os
 
-# Load model and encoders
-MODEL_PATH = "disease_model_small.joblib"
-ENCODER_PATH = "label_encoder_small.joblib"
-SYMPTOM_LIST_PATH = "symptoms_list.joblib"
-
-# If your model files are inside another directory, adjust the paths accordingly.
-
-try:
-    model = joblib.load(MODEL_PATH)
-    label_encoder = joblib.load(ENCODER_PATH)
-    symptom_list = joblib.load(SYMPTOM_LIST_PATH)
-except Exception as e:
-    print("Error loading model or encoders:", e)
-    model = None
-    label_encoder = None
-    symptom_list = []
-
-# Example medicine mapping; replace with your real mapping if needed
-medicine_mapping = {
-    "panic disorder": [
-        "Xanax (Alprazolam)",
-        "Cognitive Behavioral Therapy (CBT)",
-        "Sertraline",
-        "Clonazepam",
-        "Paroxetine"
-    ],
-    "flu": [
-        "Oseltamivir",
-        "Rest",
-        "Fluids",
-        "Acetaminophen"
-    ],
-    # Add more disease: [medicines...] as needed
-}
-
-# Flask app setup
+# === App Setup ===
 app = Flask(__name__, static_folder="frontend/build", static_url_path="")
+CORS(app)
 
-@app.route('/api/predict', methods=['POST'])
-def predict():
-    if model is None or label_encoder is None or not symptom_list:
-        return jsonify({"error": "Model or encoders not loaded"}), 500
+# === Config ===
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = 'your-secret-key'
 
+# === Extensions ===
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
+
+# === User Model ===
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(128), nullable=False)
+
+# === Initialize DB ===
+with app.app_context():
+    db.create_all()
+
+# === Authentication Routes ===
+@app.route("/api/register", methods=["POST"])
+def register():
     data = request.get_json()
-    symptoms = data.get('symptoms', [])
+    username = data.get("username")
+    password = data.get("password")
 
-    # Create input vector for the model
-    input_vector = np.zeros(len(symptom_list))
-    for symptom in symptoms:
-        if symptom in symptom_list:
-            idx = symptom_list.index(symptom)
-            input_vector[idx] = 1
-    
-    # Predict disease
-    prediction = model.predict([input_vector])[0]
-    disease = label_encoder.inverse_transform([prediction])[0]
-    recommended_medicines = medicine_mapping.get(disease, ["No recommendation available"])
+    if not username or not password:
+        return jsonify({"msg": "Missing username or password"}), 400
 
-    return jsonify({
-        "disease": disease,
-        "recommended_medicines": recommended_medicines
-    })
+    if User.query.filter_by(username=username).first():
+        return jsonify({"msg": "Username already exists"}), 409
 
-# Serve React frontend build
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+    hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
+    new_user = User(username=username, password=hashed_pw)
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({"msg": "User created"}), 201
+
+@app.route("/api/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+
+    user = User.query.filter_by(username=username).first()
+    if user and bcrypt.check_password_hash(user.password, password):
+        token = create_access_token(identity=user.id)
+        return jsonify({
+            "access_token": token,
+            "user": {"id": user.id, "username": user.username}
+        }), 200
+
+    return jsonify({"msg": "Wrong username or password"}), 401
+
+# === Load ML Files ===
+model = joblib.load("model/model_compatible.joblib")
+label_encoder = joblib.load("model/label_encoder.joblib")
+symptoms_list = joblib.load("model/symptoms_list.joblib")
+
+# === Prediction Endpoint ===
+@app.route("/api/predict", methods=["POST"])
+@jwt_required()
+def predict():
+    data = request.get_json()
+    user_input = data.get("symptoms", "").lower()
+
+    if not user_input:
+        return jsonify({"msg": "No symptoms provided"}), 400
+
+    try:
+        # Process input symptoms
+        input_symptoms = [sym.strip() for sym in user_input.split(",")]
+        input_vector = [1 if symptom in input_symptoms else 0 for symptom in symptoms_list]
+        input_array = np.array([input_vector])
+
+        # Make prediction
+        prediction_index = model.predict(input_array)[0]
+        predicted_disease = label_encoder.inverse_transform([prediction_index])[0]
+
+        # Dummy medicine mapping
+        medicine_mapping = {
+            "flu": ["Paracetamol", "Rest", "Hydration"],
+            "cold": ["Antihistamines", "Decongestant"],
+            "diabetes": ["Insulin", "Metformin"],
+            "panic disorder": ["Xanax", "CBT"],
+            "migraine": ["Ibuprofen", "Sumatriptan"],
+            "covid-19": ["Rest", "Antivirals", "Consult doctor"]
+        }
+
+        medicines = medicine_mapping.get(predicted_disease.lower(), ["Consult a physician"])
+
+        return jsonify({
+            "disease": predicted_disease,
+            "medicines": medicines
+        })
+
+    except Exception as e:
+        return jsonify({"msg": f"Prediction error: {str(e)}"}), 500
+
+# === Serve React Frontend ===
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
 def serve(path):
-    # Serve static files and index.html for React Router
     if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
     else:
-        return send_from_directory(app.static_folder, 'index.html')
+        return send_from_directory(app.static_folder, "index.html")
 
-if __name__ == '__main__':
-    # In production (Render), host and port are set by environment variables
-    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+# === Run App ===
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5050)

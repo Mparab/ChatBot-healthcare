@@ -1,68 +1,72 @@
-import React, { useState } from "react";
-import "./App.css";
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./login";
+import Signup from "./signup";
+import Chatbot from "./Chatbot";
+import { AuthContext } from "./AuthContext";
 
 function App() {
-  const [symptoms, setSymptoms] = useState("");
-  const [response, setResponse] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [auth, setAuth] = useState({
+    isAuthenticated: false,
+    token: null,
+    user: null,
+  });
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    setLoading(true);
-    setResponse(null);
+  // Load token and user on initial load
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
 
-    const symptomsArray = symptoms.split(",").map(s => s.trim()).filter(Boolean);
-
-    try {
-      const res = await fetch("/api/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symptoms: symptomsArray })
+    if (token && user) {
+      setAuth({
+        isAuthenticated: true,
+        token,
+        user: JSON.parse(user),
       });
-      const data = await res.json();
-      setResponse(data);
-    } catch (err) {
-      setResponse({ error: "Failed to get prediction." });
     }
-    setLoading(false);
+  }, []);
+
+  const login = (token, user) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+    setAuth({
+      isAuthenticated: true,
+      token,
+      user,
+    });
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setAuth({
+      isAuthenticated: false,
+      token: null,
+      user: null,
+    });
+  };
+
+  const ProtectedRoute = ({ children }) => {
+    return auth.isAuthenticated ? children : <Navigate to="/login" />;
   };
 
   return (
-    <div className="App">
-      <h1>Healthcare Chatbot</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Enter symptoms (comma separated):
-          <input
-            type="text"
-            value={symptoms}
-            onChange={e => setSymptoms(e.target.value)}
-            placeholder="e.g. headache, fever, nausea"
+    <AuthContext.Provider value={{ auth, login, logout }}>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Chatbot />
+              </ProtectedRoute>
+            }
           />
-        </label>
-        <button type="submit" disabled={loading}>
-          {loading ? "Predicting..." : "Predict Disease"}
-        </button>
-      </form>
-      {response && (
-        <div className="response">
-          {response.error ? (
-            <p style={{ color: "red" }}>{response.error}</p>
-          ) : (
-            <>
-              <h2>Prediction:</h2>
-              <p>Disease: <strong>{response.predicted_disease}</strong></p>
-              <p>Recommended Medicines:</p>
-              <ul>
-                {response.recommended_medicines.map((m, i) => (
-                  <li key={i}>{m}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
-      )}
-    </div>
+        </Routes>
+      </Router>
+    </AuthContext.Provider>
   );
 }
 
