@@ -37,8 +37,9 @@ export default function Chatbot() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${auth.token}`,
         },
-        body: JSON.stringify({ symptoms: message }),
-      });
+        body: JSON.stringify({
+          symptoms: String(message.trim())  // ✅ Force convert to string
+        }),
 
       const data = await res.json();
 

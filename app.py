@@ -79,10 +79,10 @@ symptoms_list = joblib.load("model/symptoms_list.joblib")
 @jwt_required()
 def predict():
     data = request.get_json()
-    user_input = data.get("symptoms", "").lower()
+    user_input = data.get("symptoms", "")
 
-    if not user_input:
-        return jsonify({"msg": "No symptoms provided"}), 400
+    if not isinstance(user_input, str) or not user_input.strip():
+        return jsonify({"msg": "Invalid or missing symptom string"}), 400
 
     try:
         # Process input symptoms
