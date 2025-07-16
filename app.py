@@ -69,31 +69,33 @@ def login():
 
     return jsonify({"msg": "Wrong username or password"}), 401
 
-# === Load ML Files ===
-model = joblib.load("model/model_compatible.joblib")
-label_encoder = joblib.load("model/label_encoder.joblib")
-symptoms_list = joblib.load("model/symptoms_list.joblib")
+# === Load ML Model Files ===
+try:
+    model = joblib.load("model/model_compatible.joblib")
+    label_encoder = joblib.load("model/label_encoder.joblib")
+    symptoms_list = joblib.load("model/symptoms_list.joblib")
+except Exception as e:
+    raise RuntimeError(f"Error loading model files: {e}")
 
-# === Prediction Endpoint ===
+# === Prediction Route ===
 @app.route("/api/predict", methods=["POST"])
 @jwt_required()
 def predict():
-    data = request.get_json()
-    user_input = data.get("symptoms", "")
-
-    # ✅ Validate it's a non-empty string
-    if not isinstance(user_input, str) or not user_input.strip():
-        return jsonify({"msg": "Invalid or missing symptom string"}), 400
-
-    user_input = user_input.lower()
-
     try:
-        # Process input symptoms
+        data = request.get_json(force=True)
+        user_input = data.get("symptoms")
+
+        # ✅ Validate input
+        if not isinstance(user_input, str) or not user_input.strip():
+            return jsonify({"msg": "Subject must be a string"}), 422
+
+        user_input = user_input.lower()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
+
+        # Convert symptoms to binary vector
         input_vector = [1 if symptom in input_symptoms else 0 for symptom in symptoms_list]
         input_array = np.array([input_vector])
 
-        # Make prediction
         prediction_index = model.predict(input_array)[0]
         predicted_disease = label_encoder.inverse_transform([prediction_index])[0]
 
