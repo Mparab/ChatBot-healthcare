@@ -83,7 +83,7 @@ except Exception as e:
 def predict():
     try:
         data = request.get_json(force=True)  # ✅ Ensures JSON is parsed even on Render
-        user_input = data.get("symptoms")
+        user_input = data.get("symptoms", "")
 
         # ✅ Validate it's a string
         if not isinstance(user_input, str) or not user_input.strip():
