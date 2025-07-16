@@ -22,52 +22,51 @@ export default function Chatbot() {
   const [error, setError] = useState("");
 
   const handleSend = async () => {
-  if (!message.trim()) return;
+    if (!message.trim()) return;
 
-  setChat((prev) => [...prev, { sender: "user", text: message }]);
-  setLoading(true);
-  setResponse("");
-  setMedicines([]);
-  setError("");
+    setChat((prev) => [...prev, { sender: "user", text: message }]);
+    setLoading(true);
+    setResponse("");
+    setMedicines([]);
+    setError("");
 
-  try {
-    const res = await fetch("/api/predict", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth.token}`,
-      },
-      body: JSON.stringify({ symptoms: message.trim() }),
-    });
-
-    const data = await res.json(); // ✅ FIXED LINE
-
-    if (res.ok) {
-      setResponse(data.disease);
-      setMedicines(data.medicines);
-      setChat((prev) => [
-        ...prev,
-        {
-          sender: "bot",
-          text: `Disease: ${data.disease}\nMedicines: ${data.medicines.join(", ")}`,
+    try {
+      const res = await fetch("/api/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${auth.token}`,
         },
-      ]);
-    } else {
-      setError(data.msg || "Prediction failed");
-      setChat((prev) => [
-        ...prev,
-        { sender: "bot", text: data.msg || "Prediction failed" },
-      ]);
+        body: JSON.stringify({ symptoms: message.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setResponse(data.disease);
+        setMedicines(data.medicines);
+        setChat((prev) => [
+          ...prev,
+          {
+            sender: "bot",
+            text: `Disease: ${data.disease}\nMedicines: ${data.medicines.join(", ")}`,
+          },
+        ]);
+      } else {
+        setError(data.msg || "Prediction failed");
+        setChat((prev) => [
+          ...prev,
+          { sender: "bot", text: data.msg || "Prediction failed" },
+        ]);
+      }
+    } catch (err) {
+      setError("Error connecting to server.");
+      setChat((prev) => [...prev, { sender: "bot", text: "Error connecting to server." }]);
     }
-  } catch (err) {
-    setError("Error connecting to server.");
-    setChat((prev) => [...prev, { sender: "bot", text: "Error connecting to server." }]);
-  }
 
-  setMessage("");
-  setLoading(false);
-};
-
+    setMessage("");
+    setLoading(false);
+  };
 
   return (
     <Container maxWidth="md" sx={{ mt: 4 }}>
@@ -90,9 +89,7 @@ export default function Chatbot() {
           <Box
             key={index}
             className={`message ${msg.sender}`}
-            sx={{
-              textAlign: msg.sender === "user" ? "right" : "left",
-            }}
+            sx={{ textAlign: msg.sender === "user" ? "right" : "left" }}
           >
             <Typography sx={{ whiteSpace: "pre-line" }}>{msg.text}</Typography>
           </Box>
