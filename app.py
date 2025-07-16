@@ -82,14 +82,17 @@ except Exception as e:
 @jwt_required()
 def predict():
     try:
-        data = request.get_json(force=True) or {}
-        user_input = str(data.get("symptoms", "")).strip()
+        data = request.get_json(force=True)  # ✅ Ensures JSON is parsed even on Render
+        user_input = data.get("symptoms")
 
-        if not user_input:
+        # ✅ Validate it's a string
+        if not isinstance(user_input, str) or not user_input.strip():
             return jsonify({"msg": "Subject must be a string"}), 422
 
-        user_input = user_input.lower()
+        user_input = user_input.lower().strip()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
+
+        # Convert symptoms to binary vector
         input_vector = [1 if symptom in input_symptoms else 0 for symptom in symptoms_list]
         input_array = np.array([input_vector])
 
@@ -111,7 +114,7 @@ def predict():
             "disease": predicted_disease,
             "medicines": medicines
         })
-
+    
     except Exception as e:
         return jsonify({"msg": f"Prediction error: {str(e)}"}), 500
 
