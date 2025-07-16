@@ -82,24 +82,20 @@ except Exception as e:
 @jwt_required()
 def predict():
     try:
-        data = request.get_json(force=True)
-        user_input = data.get("symptoms")
+        data = request.get_json(force=True) or {}
+        user_input = str(data.get("symptoms", "")).strip()
 
-        # ✅ Validate input
-        if not isinstance(user_input, str) or not user_input.strip():
+        if not user_input:
             return jsonify({"msg": "Subject must be a string"}), 422
 
         user_input = user_input.lower()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
-
-        # Convert symptoms to binary vector
         input_vector = [1 if symptom in input_symptoms else 0 for symptom in symptoms_list]
         input_array = np.array([input_vector])
 
         prediction_index = model.predict(input_array)[0]
         predicted_disease = label_encoder.inverse_transform([prediction_index])[0]
 
-        # Dummy medicine mapping
         medicine_mapping = {
             "flu": ["Paracetamol", "Rest", "Hydration"],
             "cold": ["Antihistamines", "Decongestant"],
