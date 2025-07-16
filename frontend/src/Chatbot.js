@@ -21,6 +21,11 @@ export default function Chatbot() {
   const [medicines, setMedicines] = useState([]);
   const [error, setError] = useState("");
 
+  const baseURL =
+    process.env.NODE_ENV === "production"
+      ? "https://chatbot-healthcare-o3kn.onrender.com"
+      : "";
+
   const handleSend = async () => {
     if (!message.trim()) return;
 
@@ -31,13 +36,15 @@ export default function Chatbot() {
     setError("");
 
     try {
-      const res = await fetch("/api/predict", {
+      const res = await fetch(`${baseURL}/api/predict`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${auth.token}`,
+          Authorization: `Bearer ${auth.token}`,
         },
-        body: JSON.stringify({ symptoms: String(message).trim() })
+        body: JSON.stringify({
+          symptoms: String(message).trim(),
+        }),
       });
 
       const data = await res.json();
@@ -61,7 +68,10 @@ export default function Chatbot() {
       }
     } catch (err) {
       setError("Error connecting to server.");
-      setChat((prev) => [...prev, { sender: "bot", text: "Error connecting to server." }]);
+      setChat((prev) => [
+        ...prev,
+        { sender: "bot", text: "Error connecting to server." },
+      ]);
     }
 
     setMessage("");
@@ -124,7 +134,9 @@ export default function Chatbot() {
       </Box>
 
       {error && (
-        <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>
+        <Typography color="error" sx={{ mt: 2 }}>
+          {error}
+        </Typography>
       )}
     </Container>
   );
