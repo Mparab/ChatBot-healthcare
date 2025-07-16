@@ -82,12 +82,13 @@ except Exception as e:
 @jwt_required()
 def predict():
     try:
-        data = request.get_json(force=True)  # ✅ Ensures JSON is parsed even on Render
+        data = request.get_json(force=True)
+        print("Received data:", data)  # Debug line
         user_input = data.get("symptoms", "")
+        print("User input:", user_input)  # Debug line
 
-        # ✅ Validate it's a string
         if not isinstance(user_input, str) or not user_input.strip():
-            return jsonify({"msg": "Subject must be a string"}), 422
+            return jsonify({"msg": "Symptoms must be a non-empty string"}), 422
 
         user_input = user_input.lower().strip()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
