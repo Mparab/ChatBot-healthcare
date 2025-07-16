@@ -81,8 +81,11 @@ def predict():
     data = request.get_json()
     user_input = data.get("symptoms", "")
 
+    # ✅ Validate it's a non-empty string
     if not isinstance(user_input, str) or not user_input.strip():
         return jsonify({"msg": "Invalid or missing symptom string"}), 400
+
+    user_input = user_input.lower()
 
     try:
         # Process input symptoms
