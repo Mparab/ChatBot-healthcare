@@ -157,6 +157,9 @@ except Exception as e:
 @app.route("/api/predict_v3", methods=["POST"])
 @jwt_required()
 def predict_v3():
+    # TEMPORARY TEST - Return immediately to confirm function is called
+    return jsonify({"msg": "PREDICT_V3 FUNCTION IS WORKING - TEST MESSAGE"}), 200
+    
     try:
         print("=== NEW PREDICTION API v3.0 CALLED ===")
         data = request.get_json(force=True)
@@ -167,13 +170,18 @@ def predict_v3():
 
         # Simple validation - COMPLETELY NEW APPROACH
         if not user_input:
+            print("Validation failed: no symptoms provided")  # Debug line
             return jsonify({"msg": "V3: No symptoms provided"}), 422
         
-        user_input_str = str(user_input).strip()
-        if not user_input_str:
+        # Convert to string and clean up
+        user_input = str(user_input).strip()
+        
+        # Check if empty after cleaning
+        if not user_input:
+            print("Validation failed: empty symptoms after cleaning")  # Debug line
             return jsonify({"msg": "V3: Empty symptoms"}), 422
 
-        user_input = str(user_input).lower().strip()
+        user_input = user_input.lower().strip()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
 
         # Convert symptoms to binary vector
