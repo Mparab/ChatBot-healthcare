@@ -77,10 +77,25 @@ except Exception as e:
 @app.route("/api/test", methods=["GET", "POST"])
 def test():
     if request.method == "GET":
-        return jsonify({"msg": "API is working", "environment": "production" if is_production else "development"})
+        return jsonify({
+            "msg": "API is working", 
+            "environment": "production" if is_production else "development",
+            "version": "LATEST_VERSION_2025_07_17",
+            "endpoints": ["predict", "predict_v3"]
+        })
     else:
         data = request.get_json()
         return jsonify({"received": data, "msg": "POST test successful"})
+
+# === Debug Route to Check What's Running ===
+@app.route("/api/debug", methods=["GET"])
+def debug():
+    return jsonify({
+        "message": "Debug endpoint working",
+        "version": "2025-07-17-LATEST",
+        "predict_v3_exists": True,
+        "environment": "production" if is_production else "development"
+    })
 
 # === Authentication Routes ===
 @app.route("/api/register", methods=["POST"])
@@ -145,9 +160,13 @@ def predict_v3():
         user_input = data.get("symptoms", "") if data else ""
         print("User input:", user_input)
 
-        # Simple validation
-        if not user_input or not str(user_input).strip():
-            return jsonify({"msg": "Please enter symptoms"}), 422
+        # Simple validation - COMPLETELY NEW APPROACH
+        if not user_input:
+            return jsonify({"msg": "V3: No symptoms provided"}), 422
+        
+        user_input_str = str(user_input).strip()
+        if not user_input_str:
+            return jsonify({"msg": "V3: Empty symptoms"}), 422
 
         user_input = str(user_input).lower().strip()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
