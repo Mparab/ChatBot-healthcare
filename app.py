@@ -146,14 +146,18 @@ def predict():
         print("User input:", user_input)  # Debug line
         print("User input type:", type(user_input))  # Debug line
 
-        # More flexible validation
-        if not user_input or (isinstance(user_input, str) and not user_input.strip()):
-            print("Validation failed: empty or invalid symptoms")  # Debug line
-            return jsonify({"msg": "Symptoms must be a non-empty string"}), 422
+        # Simplified validation - just check if we have any input
+        if not user_input:
+            print("Validation failed: no symptoms provided")  # Debug line
+            return jsonify({"msg": "Symptoms must be provided"}), 422
         
-        # Convert to string if it's not already
-        if not isinstance(user_input, str):
-            user_input = str(user_input)
+        # Convert to string and clean up
+        user_input = str(user_input).strip()
+        
+        # Check if empty after cleaning
+        if not user_input:
+            print("Validation failed: empty symptoms after cleaning")  # Debug line
+            return jsonify({"msg": "Symptoms cannot be empty"}), 422
 
         user_input = user_input.lower().strip()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
