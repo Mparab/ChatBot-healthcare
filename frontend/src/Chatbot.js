@@ -17,8 +17,6 @@ export default function Chatbot() {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState("");
-  const [medicines, setMedicines] = useState([]);
   const [error, setError] = useState("");
 
   const baseURL =
@@ -31,8 +29,6 @@ export default function Chatbot() {
 
     setChat((prev) => [...prev, { sender: "user", text: message }]);
     setLoading(true);
-    setResponse("");
-    setMedicines([]);
     setError("");
 
     try {
@@ -48,8 +44,6 @@ export default function Chatbot() {
       const data = await res.json();
 
       if (res.ok) {
-        setResponse(data.disease);
-        setMedicines(data.medicines);
         setChat((prev) => [
           ...prev,
           {

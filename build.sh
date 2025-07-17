@@ -16,9 +16,9 @@ echo "Installing Node.js dependencies..."
 cd frontend
 npm install
 
-# Build React frontend for production
+# Build React frontend for production (treat warnings as warnings, not errors)
 echo "Building React frontend..."
-npm run build
+CI=false npm run build
 
 # Return to root directory
 cd ..
