@@ -6,3 +6,4 @@ Flask-JWT-Extended
 scikit-learn
 joblib
 gunicorn
+numpy

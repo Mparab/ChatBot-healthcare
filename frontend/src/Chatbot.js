@@ -23,8 +23,8 @@ export default function Chatbot() {
 
   const baseURL =
     process.env.NODE_ENV === "production"
-      ? "https://chatbot-healthcare-o3kn.onrender.com"
-      : "";
+      ? "" // Use relative URLs for same-origin requests in production
+      : "http://localhost:5050"; // Local development server
 
   const handleSend = async () => {
     if (!message.trim()) return;

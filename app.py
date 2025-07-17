@@ -12,12 +12,40 @@ import numpy as np
 
 # === App Setup ===
 app = Flask(__name__, static_folder="frontend/build", static_url_path="")
-CORS(app)
+
+# === Environment Detection ===
+is_production = os.environ.get("RENDER") is not None
+
+# === CORS Configuration ===
+if is_production:
+    # In production, allow requests from the deployed domain
+    # Render automatically provides HTTPS, so we configure for that
+    CORS(app, origins=["https://*.onrender.com"], supports_credentials=True)
+else:
+    # In development, allow all origins for easier testing
+    CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
 
 # === Config ===
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+if is_production:
+    # Production database configuration
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///instance/users.db')
+    # Production-specific settings
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+    }
+else:
+    # Development database configuration
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/users.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = 'your-secret-key'
+# Use environment variable for JWT secret in production, fallback for development
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
+
+# Additional production configurations
+if is_production:
+    app.config['PROPAGATE_EXCEPTIONS'] = True
+    app.config['JSON_SORT_KEYS'] = False
 
 # === Extensions ===
 db = SQLAlchemy(app)
@@ -74,8 +102,16 @@ try:
     model = joblib.load("model/model_compatible.joblib")
     label_encoder = joblib.load("model/label_encoder.joblib")
     symptoms_list = joblib.load("model/symptoms_list.joblib")
+    if is_production:
+        print("Successfully loaded ML model files in production")
+    else:
+        print("Successfully loaded ML model files in development")
 except Exception as e:
-    raise RuntimeError(f"Error loading model files: {e}")
+    error_msg = f"Error loading model files: {e}"
+    print(error_msg)
+    if is_production:
+        print("Model loading failed in production environment")
+    raise RuntimeError(error_msg)
 
 # === Prediction Route ===
 @app.route("/api/predict", methods=["POST"])
@@ -130,4 +166,22 @@ def serve(path):
 
 # === Run App ===
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5050)
+    # Use PORT environment variable from Render, fallback to 5050 for local development
+    port = int(os.environ.get("PORT", 5050))
+    
+    if is_production:
+        print(f"Starting Flask app in production mode on port {port}")
+        print("Environment: Production (Render)")
+        print(f"CORS configured for: https://*.onrender.com")
+    else:
+        print(f"Starting Flask app in development mode on port {port}")
+        print("Environment: Development")
+        print(f"CORS configured for: http://localhost:3000")
+    
+    # Additional production settings
+    if is_production:
+        # Disable debug mode and set production-optimized settings
+        app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+    else:
+        # Development mode with debug enabled
+        app.run(host="0.0.0.0", port=port, debug=True)
