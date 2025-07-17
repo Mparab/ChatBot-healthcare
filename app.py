@@ -155,7 +155,6 @@ except Exception as e:
 
 # === New Prediction Route - Version 3.0 ===
 @app.route("/api/predict_v3", methods=["POST"])
-@jwt_required()
 def predict_v3():
     # TEMPORARY TEST - Return immediately to confirm function is called
     return jsonify({"msg": "PREDICT_V3 FUNCTION IS WORKING - TEST MESSAGE"}), 200
