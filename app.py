@@ -13,6 +13,11 @@ import numpy as np
 # === App Setup ===
 app = Flask(__name__, static_folder="frontend/build", static_url_path="")
 
+# === FORCE NEW DEPLOYMENT - VERSION 2025-07-17 ===
+print("="*50)
+print("FLASK APP STARTING - VERSION 2025-07-17-LATEST")
+print("="*50)
+
 # === Environment Detection ===
 is_production = os.environ.get("RENDER") is not None
 

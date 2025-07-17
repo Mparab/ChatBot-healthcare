@@ -1,11 +1,15 @@
 #!/bin/bash
 
-# Render deployment build script
+# Render deployment build script - UPDATED VERSION 2025-07-17
 # This script installs dependencies and builds the React frontend
 
 set -e  # Exit on any error
 
-echo "Starting build process..."
+echo "Starting build process - VERSION 2025-07-17..."
+
+# Clean any previous builds
+echo "Cleaning previous builds..."
+rm -rf frontend/build
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
@@ -42,4 +46,4 @@ else
     echo "WARNING: Model directory not found"
 fi
 
-echo "Build process completed successfully!"
+echo "Build process completed successfully - VERSION 2025-07-17!"
