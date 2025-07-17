@@ -62,6 +62,15 @@ class User(db.Model):
 with app.app_context():
     db.create_all()
 
+# === Test Route for Debugging ===
+@app.route("/api/test", methods=["GET", "POST"])
+def test():
+    if request.method == "GET":
+        return jsonify({"msg": "API is working", "environment": "production" if is_production else "development"})
+    else:
+        data = request.get_json()
+        return jsonify({"received": data, "msg": "POST test successful"})
+
 # === Authentication Routes ===
 @app.route("/api/register", methods=["POST"])
 def register():
@@ -120,11 +129,20 @@ def predict():
     try:
         data = request.get_json(force=True)
         print("Received data:", data)  # Debug line
-        user_input = data.get("symptoms", "")
+        print("Data type:", type(data))  # Debug line
+        
+        user_input = data.get("symptoms", "") if data else ""
         print("User input:", user_input)  # Debug line
+        print("User input type:", type(user_input))  # Debug line
 
-        if not isinstance(user_input, str) or not user_input.strip():
+        # More flexible validation
+        if not user_input or (isinstance(user_input, str) and not user_input.strip()):
+            print("Validation failed: empty or invalid symptoms")  # Debug line
             return jsonify({"msg": "Symptoms must be a non-empty string"}), 422
+        
+        # Convert to string if it's not already
+        if not isinstance(user_input, str):
+            user_input = str(user_input)
 
         user_input = user_input.lower().strip()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
