@@ -133,7 +133,53 @@ except Exception as e:
         print("Model loading failed in production environment")
     raise RuntimeError(error_msg)
 
-# === Prediction Route - UPDATED VERSION 2.0 ===
+# === New Prediction Route - Version 3.0 ===
+@app.route("/api/predict_v3", methods=["POST"])
+@jwt_required()
+def predict_v3():
+    try:
+        print("=== NEW PREDICTION API v3.0 CALLED ===")
+        data = request.get_json(force=True)
+        print("Received data:", data)
+        
+        user_input = data.get("symptoms", "") if data else ""
+        print("User input:", user_input)
+
+        # Simple validation
+        if not user_input or not str(user_input).strip():
+            return jsonify({"msg": "Please enter symptoms"}), 422
+
+        user_input = str(user_input).lower().strip()
+        input_symptoms = [sym.strip() for sym in user_input.split(",")]
+
+        # Convert symptoms to binary vector
+        input_vector = [1 if symptom in input_symptoms else 0 for symptom in symptoms_list]
+        input_array = np.array([input_vector])
+
+        prediction_index = model.predict(input_array)[0]
+        predicted_disease = label_encoder.inverse_transform([prediction_index])[0]
+
+        medicine_mapping = {
+            "flu": ["Paracetamol", "Rest", "Hydration"],
+            "cold": ["Antihistamines", "Decongestant"],
+            "diabetes": ["Insulin", "Metformin"],
+            "panic disorder": ["Xanax", "CBT"],
+            "migraine": ["Ibuprofen", "Sumatriptan"],
+            "covid-19": ["Rest", "Antivirals", "Consult doctor"]
+        }
+
+        medicines = medicine_mapping.get(predicted_disease.lower(), ["Consult a physician"])
+
+        return jsonify({
+            "disease": predicted_disease,
+            "medicines": medicines,
+            "version": "3.0"
+        })
+    
+    except Exception as e:
+        return jsonify({"msg": f"Error v3.0: {str(e)}"}), 500
+
+# === Original Prediction Route - FIXED VERSION ===
 @app.route("/api/predict", methods=["POST"])
 @jwt_required()
 def predict():

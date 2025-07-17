@@ -32,7 +32,7 @@ export default function Chatbot() {
     setError("");
 
     try {
-      const res = await fetch(`${baseURL}/api/predict`, {
+      const res = await fetch(`${baseURL}/api/predict_v3`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
