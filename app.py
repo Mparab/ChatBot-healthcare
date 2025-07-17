@@ -27,8 +27,8 @@ else:
 
 # === Config ===
 if is_production:
-    # Production database configuration
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///instance/users.db')
+    # Production database configuration - use in-memory SQLite for Render
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///tmp/users.db')
     # Production-specific settings
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'pool_pre_ping': True,
@@ -59,8 +59,19 @@ class User(db.Model):
     password = db.Column(db.String(128), nullable=False)
 
 # === Initialize DB ===
-with app.app_context():
-    db.create_all()
+try:
+    with app.app_context():
+        db.create_all()
+        if is_production:
+            print("Database tables created successfully in production")
+        else:
+            print("Database tables created successfully in development")
+except Exception as e:
+    print(f"Database initialization error: {e}")
+    if is_production:
+        print("Continuing with database initialization error in production")
+    else:
+        raise
 
 # === Test Route for Debugging ===
 @app.route("/api/test", methods=["GET", "POST"])
