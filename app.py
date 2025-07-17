@@ -133,11 +133,12 @@ except Exception as e:
         print("Model loading failed in production environment")
     raise RuntimeError(error_msg)
 
-# === Prediction Route ===
+# === Prediction Route - UPDATED VERSION 2.0 ===
 @app.route("/api/predict", methods=["POST"])
 @jwt_required()
 def predict():
     try:
+        print("=== PREDICTION API v2.0 CALLED ===")  # Version identifier
         data = request.get_json(force=True)
         print("Received data:", data)  # Debug line
         print("Data type:", type(data))  # Debug line
@@ -146,28 +147,32 @@ def predict():
         print("User input:", user_input)  # Debug line
         print("User input type:", type(user_input))  # Debug line
 
-        # Simplified validation - just check if we have any input
+        # Completely new validation approach
         if not user_input:
-            print("Validation failed: no symptoms provided")  # Debug line
-            return jsonify({"msg": "Symptoms must be provided"}), 422
+            print("VALIDATION FAILED: No symptoms provided")  # Debug line
+            return jsonify({"msg": "NEW VERSION: Please provide symptoms"}), 422
         
         # Convert to string and clean up
         user_input = str(user_input).strip()
         
         # Check if empty after cleaning
         if not user_input:
-            print("Validation failed: empty symptoms after cleaning")  # Debug line
-            return jsonify({"msg": "Symptoms cannot be empty"}), 422
+            print("VALIDATION FAILED: Empty symptoms after cleaning")  # Debug line
+            return jsonify({"msg": "NEW VERSION: Symptoms cannot be empty"}), 422
 
+        print(f"PROCESSING SYMPTOMS: {user_input}")  # Debug line
         user_input = user_input.lower().strip()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
+        print(f"PARSED SYMPTOMS: {input_symptoms}")  # Debug line
 
         # Convert symptoms to binary vector
         input_vector = [1 if symptom in input_symptoms else 0 for symptom in symptoms_list]
         input_array = np.array([input_vector])
+        print(f"INPUT VECTOR LENGTH: {len(input_vector)}")  # Debug line
 
         prediction_index = model.predict(input_array)[0]
         predicted_disease = label_encoder.inverse_transform([prediction_index])[0]
+        print(f"PREDICTED DISEASE: {predicted_disease}")  # Debug line
 
         medicine_mapping = {
             "flu": ["Paracetamol", "Rest", "Hydration"],
@@ -179,14 +184,17 @@ def predict():
         }
 
         medicines = medicine_mapping.get(predicted_disease.lower(), ["Consult a physician"])
+        print(f"RECOMMENDED MEDICINES: {medicines}")  # Debug line
 
         return jsonify({
             "disease": predicted_disease,
-            "medicines": medicines
+            "medicines": medicines,
+            "version": "2.0"  # Version identifier in response
         })
     
     except Exception as e:
-        return jsonify({"msg": f"Prediction error: {str(e)}"}), 500
+        print(f"PREDICTION ERROR: {str(e)}")  # Debug line
+        return jsonify({"msg": f"Prediction error v2.0: {str(e)}"}), 500
 
 # === Serve React Frontend ===
 @app.route("/", defaults={"path": ""})
