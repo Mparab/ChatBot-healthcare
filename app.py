@@ -207,13 +207,61 @@ def predict_v3():
         print(f"Predicted disease: {predicted_disease}")
 
         medicine_mapping = {
-            "flu": ["Paracetamol", "Rest", "Hydration"],
-            "cold": ["Antihistamines", "Decongestant"],
-            "diabetes": ["Insulin", "Metformin"],
-            "panic disorder": ["Xanax", "CBT"],
-            "migraine": ["Ibuprofen", "Sumatriptan"],
-            "covid-19": ["Rest", "Antivirals", "Consult doctor"],
-            "arthritis": ["Ibuprofen", "Anti-inflammatory drugs", "Physical therapy"]
+            # Respiratory Conditions
+            "flu": ["Paracetamol", "Rest", "Plenty of fluids", "Oseltamivir (if severe)"],
+            "cold": ["Antihistamines", "Decongestant", "Throat lozenges", "Rest"],
+            "bronchial asthma": ["Salbutamol inhaler", "Prednisolone", "Avoid triggers", "Consult pulmonologist"],
+            "pneumonia": ["Antibiotics", "Rest", "Oxygen therapy", "Hospital care if severe"],
+            "tuberculosis": ["Anti-TB drugs", "Isoniazid", "Rifampin", "Consult TB specialist"],
+            
+            # Infectious Diseases
+            "covid-19": ["Rest", "Paracetamol", "Isolation", "Consult doctor if severe"],
+            "malaria": ["Antimalarial drugs", "Chloroquine", "Rest", "Consult doctor immediately"],
+            "typhoid": ["Antibiotics", "Ciprofloxacin", "Rest", "Proper hydration"],
+            "hepatitis": ["Rest", "Avoid alcohol", "Nutritious diet", "Consult hepatologist"],
+            "aids": ["Antiretroviral therapy", "Regular monitoring", "Consult HIV specialist", "Maintain immunity"],
+            
+            # Gastrointestinal
+            "gastritis": ["Antacids", "Omeprazole", "Avoid spicy food", "Small frequent meals"],
+            "peptic ulcer": ["Proton pump inhibitors", "Antibiotics for H.pylori", "Avoid NSAIDs"],
+            "diarrhea": ["ORS", "Probiotics", "BRAT diet", "Stay hydrated"],
+            "constipation": ["Fiber supplements", "Laxatives", "Increase water intake", "Exercise"],
+            
+            # Musculoskeletal
+            "arthritis": ["Ibuprofen", "Anti-inflammatory drugs", "Physical therapy", "Joint care"],
+            "osteoporosis": ["Calcium supplements", "Vitamin D", "Weight-bearing exercise", "Bisphosphonates"],
+            "muscle strain": ["Rest", "Ice therapy", "Pain relievers", "Gentle stretching"],
+            
+            # Cardiovascular
+            "hypertension": ["ACE inhibitors", "Low sodium diet", "Regular exercise", "Weight management"],
+            "heart disease": ["Beta blockers", "Statins", "Lifestyle changes", "Cardiology consultation"],
+            
+            # Endocrine
+            "diabetes": ["Metformin", "Insulin (if needed)", "Diet control", "Regular monitoring"],
+            "thyroid": ["Levothyroxine", "Regular monitoring", "Endocrinology consultation"],
+            
+            # Neurological
+            "migraine": ["Sumatriptan", "Rest in dark room", "Avoid triggers", "Stress management"],
+            "headache": ["Paracetamol", "Rest", "Hydration", "Identify triggers"],
+            "epilepsy": ["Anticonvulsants", "Regular medication", "Avoid triggers", "Neurology follow-up"],
+            
+            # Mental Health
+            "panic disorder": ["Anxiolytics", "CBT", "Relaxation techniques", "Psychiatry consultation"],
+            "depression": ["Antidepressants", "Counseling", "Exercise", "Social support"],
+            "anxiety": ["Relaxation techniques", "CBT", "Lifestyle changes", "Professional help"],
+            
+            # Skin Conditions
+            "eczema": ["Moisturizers", "Topical steroids", "Avoid irritants", "Dermatology consultation"],
+            "psoriasis": ["Topical treatments", "Phototherapy", "Avoid triggers", "Dermatology care"],
+            
+            # Kidney/Urinary
+            "kidney disease": ["ACE inhibitors", "Diet modification", "Fluid management", "Nephrology care"],
+            "urinary tract infection": ["Antibiotics", "Increased fluid intake", "Cranberry juice", "Complete course"],
+            
+            # General/Other
+            "fever": ["Paracetamol", "Rest", "Hydration", "Monitor temperature"],
+            "fatigue": ["Rest", "Nutritious diet", "Exercise", "Identify underlying cause"],
+            "allergy": ["Antihistamines", "Avoid allergens", "Epinephrine (if severe)", "Allergy testing"]
         }
 
         medicines = medicine_mapping.get(predicted_disease.lower(), ["Consult a physician"])
