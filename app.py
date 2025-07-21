@@ -166,31 +166,91 @@ def apply_medical_validation(input_symptoms, predicted_disease):
         # Single fever should predict flu/viral fever, not serious diseases
         "fever": {
             "single_symptom": "flu",
-            "avoid_diseases": ["aids", "tuberculosis", "malaria", "typhoid"]
+            "avoid_diseases": ["aids", "tuberculosis", "malaria", "typhoid", "dengue", "hepatitis"]
         },
         
         # Headache alone should predict headache/migraine, not serious conditions
         "headache": {
-            "single_symptom": "headache",
-            "avoid_diseases": ["brain tumor", "meningitis", "stroke"]
+            "single_symptom": "migraine",
+            "avoid_diseases": ["brain tumor", "meningitis", "stroke", "paralysis", "encephalitis"]
         },
         
         # Cough alone should predict cold/flu, not serious respiratory diseases
         "cough": {
             "single_symptom": "cold",
-            "avoid_diseases": ["tuberculosis", "lung cancer", "pneumonia"]
+            "avoid_diseases": ["tuberculosis", "lung cancer", "pneumonia", "bronchitis", "asthma"]
         },
         
         # Joint pain should predict arthritis, not autoimmune diseases
         "joint pain": {
             "single_symptom": "arthritis",
-            "avoid_diseases": ["lupus", "rheumatoid arthritis"]
+            "avoid_diseases": ["lupus", "rheumatoid arthritis", "osteoporosis"]
         },
         
         # Stomach pain should predict gastritis, not serious GI diseases
         "stomach pain": {
             "single_symptom": "gastritis",
-            "avoid_diseases": ["stomach cancer", "peptic ulcer"]
+            "avoid_diseases": ["stomach cancer", "peptic ulcer", "appendicitis"]
+        },
+        
+        # Nausea should predict gastritis, not serious conditions
+        "nausea": {
+            "single_symptom": "gastritis",
+            "avoid_diseases": ["food poisoning", "pregnancy", "migraine"]
+        },
+        
+        # Fatigue should predict general fatigue, not serious diseases
+        "fatigue": {
+            "single_symptom": "fatigue",
+            "avoid_diseases": ["depression", "diabetes", "heart disease", "anemia"]
+        },
+        
+        # Dizziness should predict vertigo, not serious neurological conditions
+        "dizziness": {
+            "single_symptom": "vertigo",
+            "avoid_diseases": ["stroke", "brain tumor", "heart disease"]
+        },
+        
+        # Back pain should predict muscle strain, not serious conditions
+        "back pain": {
+            "single_symptom": "muscle strain",
+            "avoid_diseases": ["kidney disease", "spinal cord injury", "cancer"]
+        },
+        
+        # Chest pain should predict muscle strain, not heart attack immediately
+        "chest pain": {
+            "single_symptom": "muscle strain",
+            "avoid_diseases": ["heart attack", "heart disease", "lung cancer"]
+        },
+        
+        # Sore throat should predict cold, not serious infections
+        "sore throat": {
+            "single_symptom": "cold",
+            "avoid_diseases": ["strep throat", "tonsillitis", "throat cancer"]
+        },
+        
+        # Runny nose should predict cold, not allergies immediately
+        "runny nose": {
+            "single_symptom": "cold",
+            "avoid_diseases": ["allergies", "sinusitis", "flu"]
+        },
+        
+        # Muscle pain should predict muscle strain, not serious conditions
+        "muscle pain": {
+            "single_symptom": "muscle strain",
+            "avoid_diseases": ["fibromyalgia", "arthritis", "lupus"]
+        },
+        
+        # Skin rash should predict allergy, not serious skin diseases
+        "skin rash": {
+            "single_symptom": "allergy",
+            "avoid_diseases": ["eczema", "psoriasis", "skin cancer"]
+        },
+        
+        # Insomnia should predict sleep disorder, not mental health issues
+        "insomnia": {
+            "single_symptom": "sleep disorder",
+            "avoid_diseases": ["depression", "anxiety", "bipolar disorder"]
         }
     }
     
@@ -361,7 +421,10 @@ def predict_v3():
             # General/Other
             "fever": ["Paracetamol", "Rest", "Hydration", "Monitor temperature"],
             "fatigue": ["Rest", "Nutritious diet", "Exercise", "Identify underlying cause"],
-            "allergy": ["Antihistamines", "Avoid allergens", "Epinephrine (if severe)", "Allergy testing"]
+            "allergy": ["Antihistamines", "Avoid allergens", "Epinephrine (if severe)", "Allergy testing"],
+            "vertigo": ["Antihistamines", "Rest", "Avoid sudden movements", "ENT consultation"],
+            "sleep disorder": ["Sleep hygiene", "Melatonin", "Relaxation techniques", "Sleep study"],
+            "insomnia": ["Sleep hygiene", "Melatonin", "Avoid caffeine", "Stress management"]
         }
 
         medicines = medicine_mapping.get(predicted_disease.lower(), ["Consult a physician"])
