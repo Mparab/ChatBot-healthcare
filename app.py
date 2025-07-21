@@ -153,6 +153,103 @@ except Exception as e:
         print("Model loading failed in production environment")
     raise RuntimeError(error_msg)
 
+# === Medical Validation Function ===
+def apply_medical_validation(input_symptoms, predicted_disease):
+    """
+    Apply medical logic to override incorrect ML predictions
+    """
+    # Convert symptoms to lowercase for comparison
+    symptoms_lower = [symptom.lower() for symptom in input_symptoms]
+    
+    # Common symptom patterns that should predict more common diseases
+    common_symptom_overrides = {
+        # Single fever should predict flu/viral fever, not serious diseases
+        "fever": {
+            "single_symptom": "flu",
+            "avoid_diseases": ["aids", "tuberculosis", "malaria", "typhoid"]
+        },
+        
+        # Headache alone should predict headache/migraine, not serious conditions
+        "headache": {
+            "single_symptom": "headache",
+            "avoid_diseases": ["brain tumor", "meningitis", "stroke"]
+        },
+        
+        # Cough alone should predict cold/flu, not serious respiratory diseases
+        "cough": {
+            "single_symptom": "cold",
+            "avoid_diseases": ["tuberculosis", "lung cancer", "pneumonia"]
+        },
+        
+        # Joint pain should predict arthritis, not autoimmune diseases
+        "joint pain": {
+            "single_symptom": "arthritis",
+            "avoid_diseases": ["lupus", "rheumatoid arthritis"]
+        },
+        
+        # Stomach pain should predict gastritis, not serious GI diseases
+        "stomach pain": {
+            "single_symptom": "gastritis",
+            "avoid_diseases": ["stomach cancer", "peptic ulcer"]
+        }
+    }
+    
+    # If only one symptom is provided, apply common sense overrides
+    if len(symptoms_lower) == 1:
+        single_symptom = symptoms_lower[0]
+        
+        # Check for direct matches
+        for key_symptom, override_info in common_symptom_overrides.items():
+            if key_symptom in single_symptom or single_symptom in key_symptom:
+                # If predicted disease is in avoid list, override it
+                if predicted_disease.lower() in override_info["avoid_diseases"]:
+                    print(f"Medical validation: Overriding '{predicted_disease}' to '{override_info['single_symptom']}' for single symptom '{single_symptom}'")
+                    return override_info["single_symptom"]
+    
+    # Specific disease validation rules
+    disease_validation_rules = {
+        "aids": {
+            "required_symptoms": ["weight loss", "night sweats", "persistent fever", "fatigue"],
+            "min_symptoms": 2,
+            "fallback": "flu"
+        },
+        "tuberculosis": {
+            "required_symptoms": ["persistent cough", "weight loss", "night sweats", "blood in cough"],
+            "min_symptoms": 2,
+            "fallback": "cold"
+        },
+        "malaria": {
+            "required_symptoms": ["fever", "chills", "sweating", "headache"],
+            "min_symptoms": 2,
+            "fallback": "flu"
+        },
+        "heart disease": {
+            "required_symptoms": ["chest pain", "shortness of breath", "fatigue"],
+            "min_symptoms": 2,
+            "fallback": "fatigue"
+        }
+    }
+    
+    # Check if predicted disease needs validation
+    if predicted_disease.lower() in disease_validation_rules:
+        rule = disease_validation_rules[predicted_disease.lower()]
+        
+        # Count how many required symptoms are present
+        matching_symptoms = 0
+        for required_symptom in rule["required_symptoms"]:
+            for user_symptom in symptoms_lower:
+                if required_symptom in user_symptom or user_symptom in required_symptom:
+                    matching_symptoms += 1
+                    break
+        
+        # If not enough symptoms match, use fallback disease
+        if matching_symptoms < rule["min_symptoms"]:
+            print(f"Medical validation: Overriding '{predicted_disease}' to '{rule['fallback']}' - insufficient symptoms ({matching_symptoms}/{rule['min_symptoms']})")
+            return rule["fallback"]
+    
+    # If no override needed, return original prediction
+    return predicted_disease
+
 # === New Prediction Route - Version 3.0 ===
 @app.route("/api/predict_v3", methods=["POST"])
 def predict_v3():
@@ -205,6 +302,9 @@ def predict_v3():
         predicted_disease = label_encoder.inverse_transform([prediction_index])[0]
         
         print(f"Predicted disease: {predicted_disease}")
+        
+        # Medical validation - Override incorrect predictions for common symptoms
+        predicted_disease = apply_medical_validation(input_symptoms, predicted_disease)
 
         medicine_mapping = {
             # Respiratory Conditions
