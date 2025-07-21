@@ -179,13 +179,32 @@ def predict_v3():
 
         user_input = user_input.lower().strip()
         input_symptoms = [sym.strip() for sym in user_input.split(",")]
-
-        # Convert symptoms to binary vector
-        input_vector = [1 if symptom in input_symptoms else 0 for symptom in symptoms_list]
+        
+        print(f"Processed symptoms: {input_symptoms}")
+        print(f"Available symptoms in model: {symptoms_list[:10]}...")  # Show first 10
+        
+        # Convert symptoms to binary vector with better matching
+        input_vector = []
+        matched_symptoms = []
+        
+        for symptom in symptoms_list:
+            # Check if any user symptom matches or is contained in the model symptom
+            match_found = False
+            for user_symptom in input_symptoms:
+                if user_symptom in symptom or symptom in user_symptom:
+                    match_found = True
+                    matched_symptoms.append(symptom)
+                    break
+            input_vector.append(1 if match_found else 0)
+        
+        print(f"Matched symptoms: {matched_symptoms}")
+        print(f"Input vector sum: {sum(input_vector)} out of {len(input_vector)}")
+        
         input_array = np.array([input_vector])
-
         prediction_index = model.predict(input_array)[0]
         predicted_disease = label_encoder.inverse_transform([prediction_index])[0]
+        
+        print(f"Predicted disease: {predicted_disease}")
 
         medicine_mapping = {
             "flu": ["Paracetamol", "Rest", "Hydration"],
@@ -193,7 +212,8 @@ def predict_v3():
             "diabetes": ["Insulin", "Metformin"],
             "panic disorder": ["Xanax", "CBT"],
             "migraine": ["Ibuprofen", "Sumatriptan"],
-            "covid-19": ["Rest", "Antivirals", "Consult doctor"]
+            "covid-19": ["Rest", "Antivirals", "Consult doctor"],
+            "arthritis": ["Ibuprofen", "Anti-inflammatory drugs", "Physical therapy"]
         }
 
         medicines = medicine_mapping.get(predicted_disease.lower(), ["Consult a physician"])
